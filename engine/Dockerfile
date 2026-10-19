@@ -1,5 +1,5 @@
-# Python trading engine. On Linux this image installs mt5linux, which talks to
-# the MT5 desktop container (service "mt5") over rpyc on port 8001.
+# Python trading engine. On Linux it reaches the MT5 desktop on a Windows PC
+# through the RPyC bridge (MT5_RPYC_HOST, port 18812).
 FROM python:3.12-slim
 WORKDIR /srv
 ENV PYTHONUNBUFFERED=1 DATA_DIR=/data

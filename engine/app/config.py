@@ -26,8 +26,8 @@ class Settings:
     mt5_password = env("MT5_PASSWORD")
     mt5_server = env("MT5_SERVER")
     mt5_path = env("MT5_PATH")                                  # Windows: path to terminal64.exe (optional)
-    mt5_rpyc_host = env("MT5_RPYC_HOST", "mt5")                 # Linux/Docker: host of the Wine MT5 container
-    mt5_rpyc_port = int(env("MT5_RPYC_PORT", "8001"))
+    mt5_rpyc_host = env("MT5_RPYC_HOST", "")                    # public IP of the Windows PC running the MT5 desktop
+    mt5_rpyc_port = int(env("MT5_RPYC_PORT", "18812"))
     symbol_suffix = env("SYMBOL_SUFFIX", "")                    # e.g. "m" for EURUSDm
     magic = int(env("MAGIC_NUMBER", "26101801"))
     paper_balance = float(env("PAPER_BALANCE", "12"))

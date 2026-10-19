@@ -6,6 +6,6 @@ pandas>=2.1,<4
 requests==2.32.3
 # MT5 access:
 #  - Windows native  : MetaTrader5 (installed automatically on Windows)
-#  - Linux / Docker  : mt5linux talks to the MT5-under-Wine container over rpyc
+#  - Linux / Docker  : rpyc client to the bridge on the Windows PC (port 18812)
 MetaTrader5>=5.0.45; sys_platform == "win32"
-mt5linux>=0.1.9; sys_platform != "win32"
+rpyc>=5.3.1,<7; sys_platform != "win32"

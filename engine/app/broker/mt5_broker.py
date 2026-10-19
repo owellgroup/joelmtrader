@@ -2,7 +2,8 @@
 
 Two transports, same API surface:
   * Windows  : `import MetaTrader5` talks directly to the locally installed MT5 terminal.
-  * Linux    : `mt5linux` talks (rpyc) to an MT5 terminal running under Wine in the `mt5` container.
+  * Linux    : an RPyC client talks to scripts/mt5_bridge.py on the Windows PC
+               where the MT5 desktop (terminal64.exe) is open.
 """
 import logging
 import sys
@@ -40,8 +41,8 @@ class MT5Broker(Broker):
             import MetaTrader5 as m
             self.mt5 = m
         else:
-            from mt5linux import MetaTrader5
-            self.mt5 = MetaTrader5(host=Settings.mt5_rpyc_host, port=Settings.mt5_rpyc_port)
+            from .mt5_remote import RemoteMetaTrader5
+            self.mt5 = RemoteMetaTrader5(host=Settings.mt5_rpyc_host, port=Settings.mt5_rpyc_port)
         return self.mt5
 
     def connect(self, login=None, password=None, server=None):

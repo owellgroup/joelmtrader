@@ -5,7 +5,7 @@
 #   docker compose up -d --build
 #
 # Flutter talks only to the Java API. The API talks to the Python engine.
-# The Python engine talks to the MT5 desktop container.
+# The Python engine talks to the MT5 desktop on a Windows PC (not a container).
 services:
   api:
     build: ./api
@@ -46,8 +46,10 @@ services:
       ENGINE_API_KEY: ${ENGINE_API_KEY:-a293bc338ba95dbd8bcfb55aa4ab99a13f51351f712d034c}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-f262fe05a3c754a7aa5f5457ad3b4f5fabfe9487fb2b4adc}
       JAVA_EVENTS_URL: http://api:8080/internal/events
-      MT5_RPYC_HOST: mt5
-      MT5_RPYC_PORT: "8001"
+      # Public IP of the Windows PC running the MT5 desktop and the bridge.
+      # Set this in Dokploy. Example: MT5_RPYC_HOST=203.0.113.10
+      MT5_RPYC_HOST: ${MT5_RPYC_HOST:-}
+      MT5_RPYC_PORT: ${MT5_RPYC_PORT:-18812}
       MAGIC_NUMBER: ${MAGIC_NUMBER:-26101801}
       SYMBOL_SUFFIX: ${SYMBOL_SUFFIX:-}
       PAPER_BALANCE: ${PAPER_BALANCE:-12}
@@ -57,17 +59,6 @@ services:
       - engine-data:/data
     expose:
       - "8000"
-    depends_on:
-      - mt5
-
-  # MT5 is published for Intel/AMD only. On Ampere or any other ARM server this
-  # registers qemu so that image can still start. On Intel/AMD it is a no-op.
-  # The image itself is multi-arch, so this service runs on the server's own CPU.
-  binfmt:
-    image: tonistiigi/binfmt:latest
-    privileged: true
-    command: ["--install", "amd64"]
-    restart: "no"
 
   # Flutter web control panel. Host port 80 belongs to Dokploy, so the site is on 8088.
   # Nginx inside this container proxies /api to the Java API.
@@ -84,28 +75,5 @@ services:
     depends_on:
       - api
 
-  # MetaTrader 5 desktop under Wine. Intel/AMD run it directly. ARM/Ampere run it
-  # through the emulator registered above.
-  # Open http://145.241.187.174:3009 once, log into the broker, and turn Algo Trading on.
-  # The Python engine reaches this terminal on the internal port 8001.
-  mt5:
-    image: gmag11/metatrader5_vnc:latest
-    platform: linux/amd64
-    container_name: forexbot-mt5
-    restart: unless-stopped
-    depends_on:
-      binfmt:
-        condition: service_completed_successfully
-    environment:
-      CUSTOM_USER: ${MT5_VNC_USER:-admin}
-      PASSWORD: ${MT5_VNC_PASSWORD:-Kalimbwejoel@01}
-    volumes:
-      - mt5-config:/config
-    ports:
-      - "3009:3000"
-    expose:
-      - "8001"
-
 volumes:
   engine-data:
-  mt5-config:
