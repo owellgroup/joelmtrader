@@ -75,7 +75,14 @@ class MT5Broker(Broker):
                 return {"connected": True, "message": f"Connected to {info.server} (#{info.login})"}
             except Exception as e:                      # noqa: BLE001
                 self._connected = False
+                self.mt5 = None
                 self._last_error = f"{type(e).__name__}: {e}"
+                low = self._last_error.lower()
+                if any(s in low for s in ("timeout", "timed out", "refused", "unreachable", "no route", "errno")):
+                    self._last_error += (
+                        f" The server cannot reach the bridge at {Settings.mt5_rpyc_host}:{Settings.mt5_rpyc_port}. "
+                        "On the home router, forward TCP 18812 to this laptop's IPv4 address from ipconfig."
+                    )
                 log.warning("MT5 connect failed: %s", self._last_error)
                 return {"connected": False, "message": self._last_error}
 
@@ -141,6 +148,8 @@ class MT5Broker(Broker):
 
     def symbol_info(self, symbol):
         with self.lock:
+            if self.mt5 is None:
+                raise RuntimeError(self._last_error or "MT5 is not connected")
             i = self.mt5.symbol_info(self.sym(symbol))
             if i is None:
                 raise RuntimeError(f"symbol {symbol} not available on this broker")
@@ -151,6 +160,8 @@ class MT5Broker(Broker):
 
     def tick(self, symbol):
         with self.lock:
+            if self.mt5 is None:
+                return None
             t = self.mt5.symbol_info_tick(self.sym(symbol))
             if t is None:
                 return None
@@ -158,6 +169,8 @@ class MT5Broker(Broker):
 
     def rates(self, symbol, tf, count):
         m = self.mt5
+        if m is None:
+            return pd.DataFrame(columns=["time", "open", "high", "low", "close", "volume"])
         tfm = {"M1": m.TIMEFRAME_M1, "M5": m.TIMEFRAME_M5, "M15": m.TIMEFRAME_M15, "M30": m.TIMEFRAME_M30,
                "H1": m.TIMEFRAME_H1, "H4": m.TIMEFRAME_H4, "D1": m.TIMEFRAME_D1}[tf]
         with self.lock:
@@ -177,6 +190,8 @@ class MT5Broker(Broker):
 
     def positions(self):
         with self.lock:
+            if self.mt5 is None:
+                return []
             res = self.mt5.positions_get() or []
             out = []
             for p in res:

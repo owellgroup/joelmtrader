@@ -95,7 +95,10 @@ def account():
 def quotes():
     out = []
     for s in SYMBOLS:
-        t = broker.tick(s)
+        try:
+            t = broker.tick(s)
+        except Exception:                              # noqa: BLE001
+            continue
         if not t:
             continue
         f1 = md.frame(s, "M1")

@@ -24,11 +24,14 @@ class RemoteMetaTrader5:
         import rpyc
 
         self._rpyc = rpyc
-        self._conn = rpyc.classic.connect(
-            host,
-            int(port),
-            config={"sync_request_timeout": 120, "allow_pickle": True},
-        )
+        # classic.connect accepts host and port only. Passing config raises
+        # TypeError on the rpyc version installed in the engine image.
+        self._conn = rpyc.classic.connect(host, int(port))
+        try:
+            self._conn._config["sync_request_timeout"] = 120
+            self._conn._config["allow_pickle"] = True
+        except Exception:
+            pass
         self._conn.execute("import MetaTrader5 as mt5")
 
     def __getattr__(self, name: str):
