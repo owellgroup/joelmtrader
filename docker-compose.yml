@@ -60,11 +60,11 @@ services:
     depends_on:
       - mt5
 
-  # Oracle Ampere is ARM. The MT5 image is Intel-only, so this registers
-  # qemu-x86_64 on the host before MT5 starts. It must be privileged.
+  # MT5 is published for Intel/AMD only. On Ampere or any other ARM server this
+  # registers qemu so that image can still start. On Intel/AMD it is a no-op.
+  # The image itself is multi-arch, so this service runs on the server's own CPU.
   binfmt:
     image: tonistiigi/binfmt:latest
-    platform: linux/arm64
     privileged: true
     command: ["--install", "amd64"]
     restart: "no"
@@ -84,7 +84,8 @@ services:
     depends_on:
       - api
 
-  # MetaTrader 5 desktop under Wine (Intel image, run on this ARM server through qemu).
+  # MetaTrader 5 desktop under Wine. Intel/AMD run it directly. ARM/Ampere run it
+  # through the emulator registered above.
   # Open http://145.241.187.174:3009 once, log into the broker, and turn Algo Trading on.
   # The Python engine reaches this terminal on the internal port 8001.
   mt5:
