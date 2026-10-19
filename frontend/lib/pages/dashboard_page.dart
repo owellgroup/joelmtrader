@@ -28,6 +28,8 @@ class _DashboardPageState extends State<DashboardPage> {
   List _recent = [];
   String? _error;
   bool _busy = false;
+  bool _dashLoading = false;
+  bool _quotesLoading = false;
   final List<Timer> _timers = [];
 
   Api get api => context.read<AppState>().api;
@@ -56,6 +58,8 @@ class _DashboardPageState extends State<DashboardPage> {
   List _asList(dynamic v) => v is List ? v : const [];
 
   Future<void> _loadDash() async {
+    if (_dashLoading) return;
+    _dashLoading = true;
     try {
       final r = await api.get('/api/dashboard');
       if (r is! Map) throw ApiException('Dashboard returned an unexpected response');
@@ -72,15 +76,22 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
+    } finally {
+      _dashLoading = false;
     }
   }
 
   Future<void> _loadQuotes() async {
+    if (_quotesLoading) return;
+    _quotesLoading = true;
     try {
       final r = await api.get('/api/market/quotes');
       final list = r is List ? r : (r is Map ? _asList(r['quotes'] ?? r['items']) : const []);
       if (mounted) setState(() => _quotes = list);
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      _quotesLoading = false;
+    }
   }
 
   Future<void> _loadNews() async {

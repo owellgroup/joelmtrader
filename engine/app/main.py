@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 from typing import Optional
 
@@ -103,6 +104,20 @@ def account():
     return a
 
 
+_scan_gate = threading.Lock()
+
+
+def _refresh_scan():
+    if not _scan_gate.acquire(blocking=False):
+        return
+    try:
+        bot.force_scan()
+    except Exception:                                  # noqa: BLE001
+        log.exception("background scan failed")
+    finally:
+        _scan_gate.release()
+
+
 @router.get("/quotes")
 def quotes():
     out = []
@@ -113,9 +128,13 @@ def quotes():
             continue
         if not t:
             continue
-        f1 = md.frame(s, "M1")
-        d1 = md.frame(s, "D1")
-        info = broker.symbol_info(s)
+        # Candle history is large. The dashboard reads the cache; a scan fills it.
+        f1 = md.peek(s, "M1")
+        d1 = md.peek(s, "D1")
+        try:
+            info = broker.symbol_info(s)
+        except Exception:                              # noqa: BLE001
+            info = {"digits": 5}
         chg = None
         if d1 is not None and len(d1.raw):
             o = float(d1.raw["open"].iloc[-1])
@@ -129,7 +148,13 @@ def quotes():
 
 @router.get("/scan")
 def scan():
-    return bot.scan_data or bot.force_scan() or {"rankings": []}
+    # A full scan downloads every timeframe from the laptop. Never do that
+    # inside the dashboard request or the browser gives up and shows
+    # "Cannot reach the server".
+    stale = bot.scan_data is None or time.time() - (bot.last_scan_ts or 0) > 20
+    if stale:
+        threading.Thread(target=_refresh_scan, daemon=True).start()
+    return bot.scan_data or {"rankings": [], "why": "Loading market data from MT5"}
 
 
 @router.post("/scan/now")

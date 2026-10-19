@@ -34,6 +34,11 @@ class MarketData:
         self.cache = {}
         self.lock = threading.RLock()
 
+    def peek(self, symbol, tf) -> Frame | None:
+        """Return a frame already in memory. Does not call MetaTrader."""
+        with self.lock:
+            return self.cache.get((symbol, tf))
+
     def frame(self, symbol, tf, force=False) -> Frame | None:
         key = (symbol, tf)
         with self.lock:

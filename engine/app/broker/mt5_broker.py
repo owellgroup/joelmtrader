@@ -32,6 +32,9 @@ class MT5Broker(Broker):
         self._connected = False
         self._last_error = ""
         self._last_attempt = 0
+        self._ticks = {}
+        self._info_cache = {}
+        self._acct_cache = None
 
     # ---------------------------------------------------------------- connection
     def _module(self):
@@ -134,35 +137,49 @@ class MT5Broker(Broker):
 
     def account(self):
         with self.lock:
+            if self._acct_cache and time.time() - self._acct_cache[0] < 2:
+                return self._acct_cache[1]
             if not self.ensure():
                 return None
             a = self.mt5.account_info()
             if a is None:
                 return None
-            return dict(balance=a.balance, equity=a.equity, margin=a.margin, free_margin=a.margin_free,
+            snap = dict(balance=a.balance, equity=a.equity, margin=a.margin, free_margin=a.margin_free,
                         profit=a.profit, leverage=a.leverage, currency=a.currency, login=a.login,
                         server=a.server, name=a.name)
+            self._acct_cache = (time.time(), snap)
+            return snap
 
     def symbol_info(self, symbol):
         with self.lock:
+            cached = self._info_cache.get(symbol)
+            if cached and time.time() - cached[0] < 60:
+                return cached[1]
             if self.mt5 is None:
                 raise RuntimeError(self._last_error or "MT5 is not connected")
             i = self.mt5.symbol_info(self.sym(symbol))
             if i is None:
                 raise RuntimeError(f"symbol {symbol} not available on this broker")
-            return dict(symbol=self.sym(symbol), digits=i.digits, point=i.point,
+            info = dict(symbol=self.sym(symbol), digits=i.digits, point=i.point,
                         tick_size=i.trade_tick_size or i.point, tick_value=i.trade_tick_value,
                         contract_size=i.trade_contract_size, volume_min=i.volume_min, volume_max=i.volume_max,
                         volume_step=i.volume_step, stops_level=i.trade_stops_level, filling=i.filling_mode)
+            self._info_cache[symbol] = (time.time(), info)
+            return info
 
     def tick(self, symbol):
         with self.lock:
+            cached = self._ticks.get(symbol)
+            if cached and time.time() - cached[0] < 1:
+                return cached[1]
             if self.mt5 is None:
                 return None
             t = self.mt5.symbol_info_tick(self.sym(symbol))
             if t is None:
                 return None
-            return dict(bid=t.bid, ask=t.ask, spread=t.ask - t.bid, time=t.time)
+            snap = dict(bid=t.bid, ask=t.ask, spread=t.ask - t.bid, time=t.time)
+            self._ticks[symbol] = (time.time(), snap)
+            return snap
 
     def rates(self, symbol, tf, count):
         m = self.mt5
