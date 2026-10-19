@@ -76,7 +76,7 @@ services:
 
   # MetaTrader 5 desktop, running under Wine. This image is published for Intel/AMD
   # only. Dokploy servers that are ARM (linux/arm64) must pull that Intel build.
-  # Open http://SERVER:3000 once, log into the broker, and turn Algo Trading on.
+  # Open http://SERVER:3009 once, log into the broker, and turn Algo Trading on.
   # The Python engine reaches this terminal on the internal port 8001.
   mt5:
     image: gmag11/metatrader5_vnc:latest
@@ -89,7 +89,7 @@ services:
     volumes:
       - mt5-config:/config
     ports:
-      - "3000:3000"
+      - "3009:3000"
     expose:
       - "8001"
 
