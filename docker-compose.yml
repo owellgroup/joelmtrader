@@ -1,19 +1,36 @@
-# One command deploys the whole system:
-#   Java API + Python engine + Flutter web + MT5 desktop (Wine/VNC)
+# One command deploys the whole system. A .env file is optional.
+# Without it, the values below are used (database, mail, keys, MT5).
 #
 #   cd backend
-#   copy .env.example .env
 #   docker compose up -d --build
 #
-# Flutter (phone, Windows, or the web container) talks only to the Java API.
-# The Java API talks to the Python engine. The Python engine talks to MT5.
+# Flutter talks only to the Java API. The API talks to the Python engine.
+# The Python engine talks to the MT5 desktop container.
 services:
   api:
     build: ./api
     container_name: forexbot-api
     restart: unless-stopped
-    env_file: .env
     environment:
+      DB_URL: ${DB_URL:-jdbc:postgresql://84.8.131.140:5432/forex2?prepareThreshold=0}
+      DB_USERNAME: ${DB_USERNAME:-joelchipoya}
+      DB_PASSWORD: ${DB_PASSWORD:-Kalimbwejoel}
+      MAIL_HOST: ${MAIL_HOST:-smtp.resend.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-resend}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-re_RgSXUkdm_J3rvXQt3cEgUXWUyps6UnpHg}
+      MAIL_FROM: ${MAIL_FROM:-hello@notifications.wayaspot.com}
+      REPORT_TO: ${REPORT_TO:-joel@wayaspot.com}
+      LOGO_URL: ${LOGO_URL:-https://res.cloudinary.com/dixvk0sop/image/upload/v1792407456/jpXfinance_jxty7v.png}
+      BRAND_NAME: ${BRAND_NAME:-WayaSpot FX Bot}
+      DAILY_REPORT_CRON: ${DAILY_REPORT_CRON:-0 55 23 * * *}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-joel@wayaspot.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Kalimbwejoel@01}
+      JWT_SECRET: ${JWT_SECRET:-7s0xyoaSf4TmGLPnNvGURehz75OnBsMez33ETrFrlLh}
+      JWT_EXPIRY_DAYS: ${JWT_EXPIRY_DAYS:-365}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-704d862a43b153f79853acdd6856d6d8a2e1b902dfc37f49}
+      ENGINE_API_KEY: ${ENGINE_API_KEY:-a293bc338ba95dbd8bcfb55aa4ab99a13f51351f712d034c}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-f262fe05a3c754a7aa5f5457ad3b4f5fabfe9487fb2b4adc}
       ENGINE_URL: ${ENGINE_URL_OVERRIDE:-http://engine:8000}
     ports:
       - "8080:8080"
@@ -24,11 +41,17 @@ services:
     build: ./engine
     container_name: forexbot-engine
     restart: unless-stopped
-    env_file: .env
     environment:
+      BROKER_MODE: ${BROKER_MODE:-mt5}
+      ENGINE_API_KEY: ${ENGINE_API_KEY:-a293bc338ba95dbd8bcfb55aa4ab99a13f51351f712d034c}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-f262fe05a3c754a7aa5f5457ad3b4f5fabfe9487fb2b4adc}
       JAVA_EVENTS_URL: http://api:8080/internal/events
       MT5_RPYC_HOST: mt5
       MT5_RPYC_PORT: "8001"
+      MAGIC_NUMBER: ${MAGIC_NUMBER:-26101801}
+      SYMBOL_SUFFIX: ${SYMBOL_SUFFIX:-}
+      PAPER_BALANCE: ${PAPER_BALANCE:-12}
+      PAPER_SPEED: ${PAPER_SPEED:-1}
       DATA_DIR: /data
     volumes:
       - engine-data:/data
@@ -37,7 +60,7 @@ services:
     depends_on:
       - mt5
 
-  # Flutter web control panel. The API address is baked in at build time (PUBLIC_API_URL).
+  # Flutter web control panel. The API address is baked in at build time.
   web:
     build:
       context: ../frontend
@@ -51,16 +74,18 @@ services:
     depends_on:
       - api
 
-  # MetaTrader 5 desktop, running under Wine. Open http://SERVER:3000 once,
-  # log into the broker, and turn Algo Trading on (green). The Python engine
-  # reaches this terminal on the internal port 8001. It is not a public API.
+  # MetaTrader 5 desktop, running under Wine. This image is published for Intel/AMD
+  # only. Dokploy servers that are ARM (linux/arm64) must pull that Intel build.
+  # Open http://SERVER:3000 once, log into the broker, and turn Algo Trading on.
+  # The Python engine reaches this terminal on the internal port 8001.
   mt5:
     image: gmag11/metatrader5_vnc:latest
+    platform: linux/amd64
     container_name: forexbot-mt5
     restart: unless-stopped
     environment:
       CUSTOM_USER: ${MT5_VNC_USER:-admin}
-      PASSWORD: ${MT5_VNC_PASSWORD:-change-me-vnc}
+      PASSWORD: ${MT5_VNC_PASSWORD:-Kalimbwejoel@01}
     volumes:
       - mt5-config:/config
     ports:

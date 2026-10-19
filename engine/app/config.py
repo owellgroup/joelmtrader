@@ -18,10 +18,10 @@ def env(name, default=None):
 
 
 class Settings:
-    broker_mode = env("BROKER_MODE", "paper").lower()          # paper | mt5
-    api_key = env("ENGINE_API_KEY", "change-me-engine-key")
-    events_url = env("JAVA_EVENTS_URL", "http://localhost:8080/internal/events")
-    internal_key = env("INTERNAL_API_KEY", "change-me-internal-key")
+    broker_mode = env("BROKER_MODE", "mt5").lower()            # paper | mt5
+    api_key = env("ENGINE_API_KEY", "a293bc338ba95dbd8bcfb55aa4ab99a13f51351f712d034c")
+    events_url = env("JAVA_EVENTS_URL", "http://api:8080/internal/events")
+    internal_key = env("INTERNAL_API_KEY", "f262fe05a3c754a7aa5f5457ad3b4f5fabfe9487fb2b4adc")
     mt5_login = env("MT5_LOGIN")
     mt5_password = env("MT5_PASSWORD")
     mt5_server = env("MT5_SERVER")
