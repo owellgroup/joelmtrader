@@ -1,0 +1,11 @@
+{
+  "name": "JPX Finance",
+  "short_name": "JPX",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F4F6FF",
+  "theme_color": "#0000FF",
+  "description": "JPX Finance trading desk",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}

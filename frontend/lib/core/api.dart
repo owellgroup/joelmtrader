@@ -1,0 +1,61 @@
+import 'package:dio/dio.dart';
+
+class ApiException implements Exception {
+  final String message;
+  final int? status;
+  ApiException(this.message, [this.status]);
+  @override
+  String toString() => message;
+}
+
+class Api {
+  String baseUrl;
+  String? token;
+  void Function()? onUnauthorized;
+  late Dio _dio;
+
+  Api(this.baseUrl, {this.token}) {
+    _dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 30),
+    ));
+  }
+
+  String get _base => baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+
+  Future<dynamic> _call(String method, String path, {Map<String, dynamic>? query, dynamic body}) async {
+    try {
+      final res = await _dio.request(
+        '$_base$path',
+        data: body,
+        queryParameters: query,
+        options: Options(method: method, headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        }),
+      );
+      return res.data;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 401 && !path.contains('/auth/login')) {
+        onUnauthorized?.call();
+      }
+      String msg;
+      final data = e.response?.data;
+      if (data is Map && data['error'] != null) {
+        msg = data['error'].toString();
+      } else if (status == null) {
+        msg = 'Cannot reach the server at $_base. Check the URL and that the backend is running.';
+      } else {
+        msg = 'Request failed ($status)';
+      }
+      throw ApiException(msg, status);
+    }
+  }
+
+  Future<dynamic> get(String path, {Map<String, dynamic>? query}) => _call('GET', path, query: query);
+  Future<dynamic> post(String path, {dynamic body}) => _call('POST', path, body: body ?? {});
+  Future<dynamic> put(String path, {dynamic body}) => _call('PUT', path, body: body ?? {});
+  Future<dynamic> delete(String path) => _call('DELETE', path);
+}

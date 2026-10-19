@@ -63,10 +63,10 @@ services:
   # Flutter web control panel. The API address is baked in at build time.
   web:
     build:
-      context: ../frontend
+      context: ./frontend
       dockerfile: Dockerfile
       args:
-        API_URL: ${PUBLIC_API_URL:-http://84.8.131.140:8080}
+        API_URL: ${PUBLIC_API_URL:-http://145.241.187.174}
     container_name: forexbot-web
     restart: unless-stopped
     ports:
