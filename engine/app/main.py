@@ -2,10 +2,11 @@ import logging
 import time
 from typing import Optional
 
-from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, WebSocket
 from pydantic import BaseModel
 
 from .bot import Bot
+from .broker.mt5_link import hub
 from .broker import get_broker
 from .charts import chart_payload
 from .config import SYMBOLS, TIMEFRAMES, Settings, config_store
@@ -44,6 +45,17 @@ class ConnectReq(BaseModel):
     login: Optional[str] = None
     password: Optional[str] = None
     server: Optional[str] = None
+
+
+@app.websocket("/mt5-bridge")
+async def mt5_bridge(websocket: WebSocket):
+    """The Windows PC dials out to here. The engine then calls MetaTrader over this socket."""
+    await websocket.accept()
+    key = websocket.headers.get("x-api-key", "")
+    if key != Settings.api_key:
+        await websocket.close(code=1008)
+        return
+    await hub.attach(websocket)
 
 
 @app.get("/health")

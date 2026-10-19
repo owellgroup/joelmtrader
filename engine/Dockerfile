@@ -1,5 +1,5 @@
-# Python trading engine. On Linux it reaches the MT5 desktop on a Windows PC
-# through the RPyC bridge (MT5_RPYC_HOST, port 18812).
+# Python trading engine. The MT5 desktop on the Windows PC dials out to
+# ws://<server>:8088/mt5-bridge. The engine does not dial into the home network.
 FROM python:3.12-slim
 WORKDIR /srv
 ENV PYTHONUNBUFFERED=1 DATA_DIR=/data

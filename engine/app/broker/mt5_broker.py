@@ -78,11 +78,8 @@ class MT5Broker(Broker):
                 self.mt5 = None
                 self._last_error = f"{type(e).__name__}: {e}"
                 low = self._last_error.lower()
-                if any(s in low for s in ("timeout", "timed out", "refused", "unreachable", "no route", "errno")):
-                    self._last_error += (
-                        f" The server cannot reach the bridge at {Settings.mt5_rpyc_host}:{Settings.mt5_rpyc_port}. "
-                        "On the home router, forward TCP 18812 to this laptop's IPv4 address from ipconfig."
-                    )
+                if "not connected to the server" in low or any(s in low for s in ("timeout", "timed out", "refused")):
+                    self._last_error += " Start scripts\\mt5-bridge-windows.bat on the laptop and leave it open."
                 log.warning("MT5 connect failed: %s", self._last_error)
                 return {"connected": False, "message": self._last_error}
 

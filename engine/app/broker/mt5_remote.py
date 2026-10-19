@@ -1,52 +1,39 @@
 """Linux client for the MetaTrader 5 terminal on a Windows PC.
 
-The official MetaTrader5 package only runs on Windows, next to terminal64.exe.
-On Linux the engine opens an RPyC connection to scripts/mt5_bridge.py, which
-imports that package on the PC where the desktop terminal is open.
+The laptop bridge connects out to the engine. Calls are sent over that link.
 """
+from types import SimpleNamespace
+
+from .mt5_link import hub
+
+_CALLABLES = set()
 
 
-_CALLABLES = {
-    "function",
-    "builtin_function_or_method",
-    "method",
-    "cython_function_or_method",
-}
+def _to_obj(value):
+    if isinstance(value, dict):
+        return SimpleNamespace(**{k: _to_obj(v) for k, v in value.items()})
+    if isinstance(value, list):
+        return [_to_obj(v) for v in value]
+    return value
 
 
 class RemoteMetaTrader5:
-    def __init__(self, host: str, port: int):
-        if not host:
-            raise RuntimeError(
-                "MT5_RPYC_HOST is empty. Set it to the public IP of the Windows PC "
-                "that is running the MT5 desktop and scripts\\mt5-bridge-windows.bat."
-            )
-        import rpyc
-
-        self._rpyc = rpyc
-        # classic.connect accepts host and port only. Passing config raises
-        # TypeError on the rpyc version installed in the engine image.
-        self._conn = rpyc.classic.connect(host, int(port))
-        try:
-            self._conn._config["sync_request_timeout"] = 120
-            self._conn._config["allow_pickle"] = True
-        except Exception:
-            pass
-        self._conn.execute("import MetaTrader5 as mt5")
+    def __init__(self, host: str = "", port: int = 0):
+        self._cache = {}
 
     def __getattr__(self, name: str):
         if name.startswith("_"):
             raise AttributeError(name)
-        kind = self._conn.eval(f"type(getattr(mt5, {name!r})).__name__")
-        if kind in _CALLABLES:
+        if name in self._cache:
+            return self._cache[name]
+        info = hub.call("__lookup__", [name], {})
+        if info.get("callable"):
             def invoke(*args, **kwargs):
-                code = f"mt5.{name}(*{args!r}, **{kwargs!r})"
-                result = self._conn.eval(code)
-                # Candle arrays must be real numpy objects. Account and order
-                # results stay remote so their fields (login, retcode, ...) work.
+                result = hub.call(name, args, kwargs, timeout=90 if name == "initialize" else 45)
                 if name.startswith("copy_"):
-                    return self._rpyc.classic.obtain(result)
-                return result
+                    return result
+                return _to_obj(result)
 
             return invoke
-        return self._rpyc.classic.obtain(self._conn.eval(f"mt5.{name}"))
+        self._cache[name] = info.get("value")
+        return self._cache[name]
