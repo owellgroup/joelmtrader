@@ -7,7 +7,7 @@ COPY lib ./lib
 COPY test ./test
 RUN flutter create --project-name waya_fx_bot --org com.wayaspot --platforms=web .
 RUN flutter pub get
-ARG API_URL=http://145.241.187.174
+ARG API_URL=http://145.241.187.174:8088
 RUN flutter build web --release --dart-define=API_URL=${API_URL}
 
 FROM nginx:1.27-alpine

@@ -115,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                               padding: const EdgeInsets.only(top: 14),
                               child: TextField(
                                 controller: _url,
-                                decoration: const InputDecoration(labelText: 'Live backend URL', prefixIcon: Icon(Icons.dns_outlined), hintText: 'http://145.241.187.174'),
+                                decoration: const InputDecoration(labelText: 'Live backend URL', prefixIcon: Icon(Icons.dns_outlined), hintText: 'http://145.241.187.174:8088'),
                               ),
                             )
                           : const SizedBox(width: double.infinity),

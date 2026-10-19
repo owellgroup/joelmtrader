@@ -60,17 +60,18 @@ services:
     depends_on:
       - mt5
 
-  # Flutter web control panel. The API address is baked in at build time.
+  # Flutter web control panel. Host port 80 belongs to Dokploy, so the site is on 8088.
+  # Nginx inside this container proxies /api to the Java API.
   web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        API_URL: ${PUBLIC_API_URL:-http://145.241.187.174}
+        API_URL: http://145.241.187.174:8088
     container_name: forexbot-web
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-80}:80"
+      - "8088:80"
     depends_on:
       - api
 
