@@ -1,0 +1,73 @@
+# One command deploys the whole system:
+#   Java API + Python engine + Flutter web + MT5 desktop (Wine/VNC)
+#
+#   cd backend
+#   copy .env.example .env
+#   docker compose up -d --build
+#
+# Flutter (phone, Windows, or the web container) talks only to the Java API.
+# The Java API talks to the Python engine. The Python engine talks to MT5.
+services:
+  api:
+    build: ./api
+    container_name: forexbot-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ENGINE_URL: ${ENGINE_URL_OVERRIDE:-http://engine:8000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - engine
+
+  engine:
+    build: ./engine
+    container_name: forexbot-engine
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      JAVA_EVENTS_URL: http://api:8080/internal/events
+      MT5_RPYC_HOST: mt5
+      MT5_RPYC_PORT: "8001"
+      DATA_DIR: /data
+    volumes:
+      - engine-data:/data
+    expose:
+      - "8000"
+    depends_on:
+      - mt5
+
+  # Flutter web control panel. The API address is baked in at build time (PUBLIC_API_URL).
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        API_URL: ${PUBLIC_API_URL:-http://84.8.131.140:8080}
+    container_name: forexbot-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      - api
+
+  # MetaTrader 5 desktop, running under Wine. Open http://SERVER:3000 once,
+  # log into the broker, and turn Algo Trading on (green). The Python engine
+  # reaches this terminal on the internal port 8001. It is not a public API.
+  mt5:
+    image: gmag11/metatrader5_vnc:latest
+    container_name: forexbot-mt5
+    restart: unless-stopped
+    environment:
+      CUSTOM_USER: ${MT5_VNC_USER:-admin}
+      PASSWORD: ${MT5_VNC_PASSWORD:-change-me-vnc}
+    volumes:
+      - mt5-config:/config
+    ports:
+      - "3000:3000"
+    expose:
+      - "8001"
+
+volumes:
+  engine-data:
+  mt5-config:

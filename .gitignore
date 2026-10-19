@@ -1,0 +1,5 @@
+.env
+engine/data/
+engine/.venv/
+**/__pycache__/
+api/target/
