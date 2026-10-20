@@ -18,6 +18,10 @@ provision() {
   echo "[provision] 1/4 creating the Wine prefix"
   wineboot -u >/dev/null 2>&1 || true
   wine winecfg -v win10 >/dev/null 2>&1 || true
+  wine reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AeDebug" /v Auto /t REG_SZ /d 0 /f >/dev/null 2>&1 || true
+  wine reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AeDebug" /v Debugger /t REG_SZ /d "" /f >/dev/null 2>&1 || true
+  wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v winedbg.exe /t REG_SZ /d "" /f >/dev/null 2>&1 || true
+  pkill -f winedbg || true
 
   echo "[provision] 2/4 installing Python 3.11 (embeddable) under Wine"
   if [ ! -f "$PYDIR/python.exe" ]; then
@@ -65,12 +69,17 @@ provision() {
     echo "[provision] If this waits, open http://37.27.56.188:6080/vnc.html and finish the MetaTrader window."
     cp -f "$setup" "$WINEPREFIX/drive_c/mt5setup.exe"
     ( timeout 1500 wine 'C:\mt5setup.exe' /auto >"$WINEPREFIX/cache/mt5setup.log" 2>&1 || true ) &
-    local waited=0 found=""
-    until found="$(find "$WINEPREFIX/drive_c" -name terminal64.exe 2>/dev/null | head -n 1)" && [ -n "$found" ] || [ "$waited" -ge 1200 ]; do
+    local waited=0 found="" quiet=0
+    while [ "$waited" -lt 2700 ]; do
+      found="$(find "$WINEPREFIX/drive_c" -name terminal64.exe 2>/dev/null | head -n 1 || true)"
+      if [ -n "$found" ]; then break; fi
       if pgrep -f mt5setup.exe >/dev/null 2>&1; then
-        echo "[provision] installer is still open (${waited}s). Click it on port 6080 if a window is waiting."
+        echo "[provision] installer is still open (${waited}s). Open http://37.27.56.188:6080/vnc.html and click Next."
+        quiet=0
       else
-        echo "[provision] installer process is gone (${waited}s) and terminal64.exe is not installed yet."
+        quiet=$((quiet + 15))
+        echo "[provision] installer process is gone (${waited}s)."
+        if [ "$quiet" -ge 60 ]; then break; fi
       fi
       sleep 15
       waited=$((waited + 15))
@@ -107,9 +116,9 @@ case "${1:-}" in
     sleep 3
     if [ -n "${VNC_PASSWORD:-}" ]; then
       x11vnc -storepasswd "$VNC_PASSWORD" /tmp/vncpass >/dev/null 2>&1
-      exec x11vnc -display :99 -forever -shared -rfbport 5900 -localhost -rfbauth /tmp/vncpass -noxdamage -quiet
+      exec x11vnc -display :99 -forever -shared -rfbport 5900 -rfbauth /tmp/vncpass -noxdamage
     fi
-    exec x11vnc -display :99 -forever -shared -rfbport 5900 -localhost -nopw -noxdamage -quiet ;;
+    exec x11vnc -display :99 -forever -shared -rfbport 5900 -nopw -noxdamage ;;
 
   novnc)
     if [ "${ENABLE_VNC:-1}" != "1" ]; then exec sleep infinity; fi

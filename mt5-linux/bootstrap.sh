@@ -1,29 +1,12 @@
 #!/bin/bash
 # Save this file first with:  cat > /tmp/bootstrap.sh
 # Then run:  bash /tmp/bootstrap.sh
-# Do not paste it straight at the Oracle prompt. That closes the login.
 set -euo pipefail
-echo "=== MT5 setup on this Oracle server ==="
+echo "=== MT5 setup on 37.27.56.188 ==="
 if [ "$(uname -m)" != "x86_64" ]; then
   echo "This server is $(uname -m). MetaTrader 5 needs x86_64. Stop here."
   exit 1
 fi
-if ! sudo -n true 2>/dev/null; then
-  echo "sudo needs a password on this account. The Oracle image normally allows sudo with no password."
-  exit 1
-fi
-if ! swapon --show | grep -q .; then
-  echo "Adding 4G swap"
-  sudo fallocate -l 4G /swapfile
-  sudo chmod 600 /swapfile
-  sudo mkswap /swapfile
-  sudo swapon /swapfile
-  grep -q /swapfile /etc/fstab || echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab >/dev/null
-fi
-if ! command -v docker >/dev/null 2>&1; then
-  curl -fsSL https://get.docker.com | sudo sh
-fi
-sudo systemctl enable --now docker containerd
 sudo mkdir -p /opt/mt5-bridge
 sudo rm -rf /opt/mt5-bridge/*
 sudo tee /opt/mt5-bridge/Dockerfile >/dev/null << 'END_DOCKERFILE'
@@ -62,20 +45,21 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/opt/mt5/entrypoint.sh"]
 END_DOCKERFILE
 sudo tee /opt/mt5-bridge/entrypoint.sh >/dev/null << 'END_ENTRYPOINT_SH'
 #!/usr/bin/env bash
-# First start installs the Wine prefix, MetaTrader 5 and Windows Python into the /wine volume.
-# The installer is shown on port 6080 so a Next button can be clicked.
-# Every later start hands control to supervisord, which restarts any process that dies.
+# One container stays up. The MetaTrader screen is on port 6080 for the whole install.
+# After install, supervisord keeps MetaTrader and the Python bridge running.
 set -uo pipefail
 mkdir -p "$WINEPREFIX"
+unset XAUTHORITY
 export DISPLAY=:99
 
 start_screen() {
   if ! pgrep -f "Xvfb :99" >/dev/null 2>&1; then
     rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
-    Xvfb :99 -screen 0 1280x800x16 -nolisten tcp -ac >/tmp/xvfb.log 2>&1 &
+    Xvfb :99 -screen 0 1280x800x24 -ac -nolisten tcp >/tmp/xvfb.log 2>&1 &
     sleep 1
   fi
-  if [ "${ENABLE_VNC:-1}" = "1" ] && ! pgrep -f "x11vnc -display :99" >/dev/null 2>&1; then
+  if [ "${ENABLE_VNC:-1}" = "1" ] && ! pgrep -x x11vnc >/dev/null 2>&1; then
+    # Xvfb is started with -ac. Do not pass -auth. A guessed cookie makes XOpenDisplay fail.
     if [ -n "${VNC_PASSWORD:-}" ]; then
       x11vnc -storepasswd "$VNC_PASSWORD" /tmp/vncpass >/dev/null 2>&1
       x11vnc -display :99 -forever -shared -rfbport 5900 -rfbauth /tmp/vncpass -noxdamage -bg -o /tmp/x11vnc.log
@@ -83,20 +67,26 @@ start_screen() {
       x11vnc -display :99 -forever -shared -rfbport 5900 -nopw -noxdamage -bg -o /tmp/x11vnc.log
     fi
   fi
-  if [ "${ENABLE_VNC:-1}" = "1" ] && ! pgrep -f "websockify --web=/usr/share/novnc 6080" >/dev/null 2>&1; then
-    websockify --web=/usr/share/novnc 6080 127.0.0.1:5900 >/tmp/novnc.log 2>&1 &
+  if [ "${ENABLE_VNC:-1}" = "1" ] && ! pgrep -x websockify >/dev/null 2>&1; then
+    websockify --web=/usr/share/novnc 0.0.0.0:6080 127.0.0.1:5900 >/tmp/novnc.log 2>&1 &
   fi
 }
 
 if [ ! -f "$WINEPREFIX/.provisioned-v1" ]; then
-  echo "[entrypoint] First start: installing MT5 + Python under Wine."
-  echo "[entrypoint] Open http://37.27.56.188:6080/vnc.html and click through the MetaTrader installer if it is waiting."
+  echo "[entrypoint] Installing MT5. Open http://37.27.56.188:6080/vnc.html and click Next if a window is waiting."
   start_screen
-  if ! /opt/mt5/svc.sh provision; then
-    echo "[entrypoint] Provisioning FAILED. Waiting 2 minutes, then Docker restarts the container."
-    sleep 120
-    exit 1
-  fi
+  while [ ! -f "$WINEPREFIX/.provisioned-v1" ]; do
+    if /opt/mt5/svc.sh provision; then
+      break
+    fi
+    echo "[entrypoint] MetaTrader is not installed yet. The screen stays up. Retrying in 30 seconds."
+    start_screen
+    sleep 30
+  done
+  pkill -x x11vnc || true
+  pkill -x websockify || true
+  pkill -x Xvfb || true
+  sleep 1
 fi
 
 exec /usr/bin/supervisord -n -c /opt/mt5/supervisord.conf
@@ -169,12 +159,17 @@ provision() {
     echo "[provision] If this waits, open http://37.27.56.188:6080/vnc.html and finish the MetaTrader window."
     cp -f "$setup" "$WINEPREFIX/drive_c/mt5setup.exe"
     ( timeout 1500 wine 'C:\mt5setup.exe' /auto >"$WINEPREFIX/cache/mt5setup.log" 2>&1 || true ) &
-    local waited=0 found=""
-    until found="$(find "$WINEPREFIX/drive_c" -name terminal64.exe 2>/dev/null | head -n 1)" && [ -n "$found" ] || [ "$waited" -ge 1200 ]; do
+    local waited=0 found="" quiet=0
+    while [ "$waited" -lt 2700 ]; do
+      found="$(find "$WINEPREFIX/drive_c" -name terminal64.exe 2>/dev/null | head -n 1 || true)"
+      if [ -n "$found" ]; then break; fi
       if pgrep -f mt5setup.exe >/dev/null 2>&1; then
-        echo "[provision] installer is still open (${waited}s). Click it on port 6080 if a window is waiting."
+        echo "[provision] installer is still open (${waited}s). Open http://37.27.56.188:6080/vnc.html and click Next."
+        quiet=0
       else
-        echo "[provision] installer process is gone (${waited}s) and terminal64.exe is not installed yet."
+        quiet=$((quiet + 15))
+        echo "[provision] installer process is gone (${waited}s)."
+        if [ "$quiet" -ge 60 ]; then break; fi
       fi
       sleep 15
       waited=$((waited + 15))
@@ -211,9 +206,9 @@ case "${1:-}" in
     sleep 3
     if [ -n "${VNC_PASSWORD:-}" ]; then
       x11vnc -storepasswd "$VNC_PASSWORD" /tmp/vncpass >/dev/null 2>&1
-      exec x11vnc -display :99 -forever -shared -rfbport 5900 -localhost -rfbauth /tmp/vncpass -noxdamage -quiet
+      exec x11vnc -display :99 -forever -shared -rfbport 5900 -rfbauth /tmp/vncpass -noxdamage
     fi
-    exec x11vnc -display :99 -forever -shared -rfbport 5900 -localhost -nopw -noxdamage -quiet ;;
+    exec x11vnc -display :99 -forever -shared -rfbport 5900 -nopw -noxdamage ;;
 
   novnc)
     if [ "${ENABLE_VNC:-1}" != "1" ]; then exec sleep infinity; fi
@@ -408,7 +403,7 @@ import MetaTrader5 as mt5
 import numpy as np
 import websockets
 
-SERVER = os.environ.get("MT5_BRIDGE_URL", "").strip()
+SERVER = os.environ.get("MT5_BRIDGE_URL", "ws://37.27.56.188:8088/mt5-bridge").strip()
 API_KEY = os.environ.get("ENGINE_API_KEY", "").strip()
 MT5_PATH = os.environ.get("MT5_EXE_PATH", r"C:\Program Files\MetaTrader 5\terminal64.exe")
 HEARTBEAT = os.environ.get("MT5_HEARTBEAT_FILE", r"Z:\tmp\mt5_bridge_heartbeat")
@@ -522,8 +517,5 @@ for base in ("XAUUSD", "EURUSD", "GBPUSD"):
 mt5.shutdown()
 END_CHECK_MT5_PY
 sudo chmod +x /opt/mt5-bridge/entrypoint.sh /opt/mt5-bridge/svc.sh
-echo "Building the image. The first build downloads Ubuntu and Wine."
 sudo docker build -t mt5-bridge:latest /opt/mt5-bridge
-sudo docker images mt5-bridge
 echo "IMAGE READY"
-echo "Next step is Portainer. Stack name: mt5-bridge. The yaml is in Linux.md."

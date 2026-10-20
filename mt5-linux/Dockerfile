@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     WINEPREFIX=/wine \
     WINEARCH=win64 \
     WINEDEBUG=-all \
-    WINEDLLOVERRIDES="mscoree,mshtml=" \
+    WINEDLLOVERRIDES="mscoree,mshtml=;winedbg.exe=d" \
     MALLOC_ARENA_MAX=2
 
 RUN dpkg --add-architecture i386 \
