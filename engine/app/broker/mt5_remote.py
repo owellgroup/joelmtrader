@@ -1,6 +1,6 @@
 """Linux client for the MetaTrader 5 terminal on a Windows PC.
 
-The laptop bridge connects out to the engine. Calls are sent over that link.
+The MT5 server connects out to the engine. Calls are sent over that link.
 """
 from types import SimpleNamespace
 

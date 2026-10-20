@@ -4,5 +4,5 @@ pydantic==2.10.4
 numpy>=1.26,<3
 pandas>=2.1,<4
 requests==2.32.3
-# Windows only. The cloud engine talks to the laptop bridge over a websocket.
+# Windows only. The engine on Linux talks to the MT5 server over a websocket.
 MetaTrader5>=5.0.45; sys_platform == "win32"

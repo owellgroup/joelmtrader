@@ -50,7 +50,7 @@ class ConnectReq(BaseModel):
 
 @app.websocket("/mt5-bridge")
 async def mt5_bridge(websocket: WebSocket):
-    """The Windows PC dials out to here. The engine then calls MetaTrader over this socket."""
+    """The MT5 server dials out to here. The engine then calls MetaTrader over this socket."""
     await websocket.accept()
     key = websocket.headers.get("x-api-key", "")
     if key != Settings.api_key:

@@ -2,8 +2,8 @@
 
 Two transports, same API surface:
   * Windows  : `import MetaTrader5` talks directly to the locally installed MT5 terminal.
-  * Linux    : an RPyC client talks to scripts/mt5_bridge.py on the Windows PC
-               where the MT5 desktop (terminal64.exe) is open.
+  * Linux    : the engine waits for the MT5 container on 37.27.56.188 to dial in
+               over /mt5-bridge. That container runs terminal64.exe under Wine.
 """
 import logging
 import sys
@@ -82,7 +82,7 @@ class MT5Broker(Broker):
                 self._last_error = f"{type(e).__name__}: {e}"
                 low = self._last_error.lower()
                 if "not connected to the server" in low or any(s in low for s in ("timeout", "timed out", "refused")):
-                    self._last_error += " Start scripts\\mt5-bridge-windows.bat on the laptop and leave it open."
+                    self._last_error += " On 37.27.56.188 start the mt5-bridge container and wait until its log says Connected to the engine."
                 log.warning("MT5 connect failed: %s", self._last_error)
                 return {"connected": False, "message": self._last_error}
 

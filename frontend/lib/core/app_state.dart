@@ -3,8 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api.dart';
 
 /// Live site. The web container proxies /api to the Java API on the same host.
-/// Override at build time with --dart-define=API_URL=http://145.241.187.174:8088
-const String kDefaultApiUrl = String.fromEnvironment('API_URL', defaultValue: 'http://145.241.187.174:8088');
+/// Override at build time with --dart-define=API_URL=http://37.27.56.188:8088
+const String kDefaultApiUrl = String.fromEnvironment('API_URL', defaultValue: 'http://37.27.56.188:8088');
 
 /// Holds session (JWT persisted on-device -> stays logged in until you log out) and theme.
 class AppState extends ChangeNotifier {
@@ -21,7 +21,7 @@ class AppState extends ChangeNotifier {
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     var url = _prefs.getString('apiUrl');
-    if (url == null || url.contains('localhost') || url.contains('127.0.0.1') || url.contains('84.8.131.140') || url.contains('144.241.187.174') || url == 'http://145.241.187.174' || url == 'http://145.241.187.174/') {
+    if (url == null || url.contains('localhost') || url.contains('127.0.0.1') || url.contains('84.8.131.140') || url.contains('144.241.187.174') || url.contains('145.241.187.174')) {
       url = kDefaultApiUrl;
       await _prefs.setString('apiUrl', url);
     }

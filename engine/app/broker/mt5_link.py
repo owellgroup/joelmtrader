@@ -1,6 +1,6 @@
-"""Holds the live link to the MT5 desktop.
+"""Holds the live link to MetaTrader 5.
 
-The laptop dials out to this engine. The engine never dials into the home network.
+The MT5 container on 37.27.56.188 dials out to this engine. The engine never dials into that server.
 """
 import asyncio
 import json
@@ -32,7 +32,7 @@ class BridgeHub:
                 await old.close()
             except Exception:
                 pass
-        log.info("MT5 bridge connected from the laptop")
+        log.info("MT5 bridge connected")
         try:
             while True:
                 msg = json.loads(await ws.receive_text())
@@ -66,9 +66,8 @@ class BridgeHub:
     def call(self, method, args, kwargs, timeout=60):
         if not self.online:
             raise RuntimeError(
-                "The laptop bridge is not connected to the server. "
-                "Close the old bridge window and start scripts\\mt5-bridge-windows.bat again. "
-                "Leave it open until it says Connected to the server."
+                "The MT5 bridge is not connected. On 37.27.56.188 the mt5-bridge container "
+                "must be running, and its log must say Connected to the engine."
             )
         event = threading.Event()
         box = {}

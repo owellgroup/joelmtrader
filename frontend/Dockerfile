@@ -9,7 +9,7 @@ COPY lib ./lib
 COPY web ./web
 COPY test ./test
 RUN flutter pub get
-ARG API_URL=http://145.241.187.174:8088
+ARG API_URL=http://37.27.56.188:8088
 RUN flutter build web --release --dart-define=API_URL=${API_URL}
 
 FROM nginx:1.27-alpine

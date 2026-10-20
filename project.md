@@ -1,16 +1,16 @@
 # Set up the MT5 desktop on this PC
 
-Java, Python, and the Flutter app are already running on the server. This guide is only the remaining piece: the MetaTrader 5 program installed on this Windows PC.
+MetaTrader runs on `37.27.56.188`. Follow `Linux.md`. Postgres stays on `84.8.131.140`. The Windows steps below remain the PC alternative: `scripts\mt5-bridge-windows.bat`.
 
-You do not install MT5 on the server. You do not open port 3009. The MT5 window on this PC is the terminal the bot trades through.
+Java, Python, and the Flutter app run on `37.27.56.188`. You do not open port 3009.
 
 ## What is already running
 
 | Piece | Address | You do this |
 |---|---|---|
-| Flutter app | http://145.241.187.174:8088 | Open it in a browser and sign in |
-| Java API | http://145.241.187.174:8080 | Nothing. The app talks to it for you |
-| Python engine | inside Docker, port 8000, not public | Nothing. The laptop bridge calls it |
+| Flutter app | http://37.27.56.188:8088 | Open it in a browser and sign in |
+| Java API | http://37.27.56.188:8080 | Nothing. The app talks to it for you |
+| Python engine | inside Docker, port 8000, not public | Nothing. The MT5 server calls it |
 | Database | `84.8.131.140`, database `forex2` | Nothing |
 
 Sign in to the app with the same admin account you already use (`joel@wayaspot.com`).
@@ -18,7 +18,7 @@ Sign in to the app with the same admin account you already use (`joel@wayaspot.c
 ## How a trade reaches the broker
 
 ```
-This Windows PC                         Server 145.241.187.174
+This Windows PC                         Server 37.27.56.188
 ────────────────────────                ─────────────────────────────────
 MetaTrader 5 (the EXE)                  Flutter app  :8088
         ▲                                    │
@@ -74,13 +74,13 @@ The bridge is a small program on this PC. The cloud engine uses it to reach the 
 5. The window then prints `Connected to the server. Leave this window open.`
 6. Leave the black window open. Closing it disconnects the server from MT5.
 
-The bridge calls `ws://145.241.187.174:8088/mt5-bridge`. Your public IP and port 18812 are not used. A home router port forward is not required.
+The bridge calls `ws://37.27.56.188:8088/mt5-bridge`. Your public IP and port 18812 are not used. A home router port forward is not required.
 
 Push this project and redeploy in Dokploy before starting the bridge. The server must be running the build that accepts `/mt5-bridge`. Redeploy both the engine and the web container.
 
 ## 3. Connect the account from the app
 
-1. Open http://145.241.187.174:8088 and sign in.
+1. Open http://37.27.56.188:8088 and sign in.
 2. On the dashboard, the card **Log in to your MT5 account** is shown until the terminal is connected.
 3. Fill the three fields with the values from the table at the top of this guide.
 4. Press **Connect MT5**. Only the super admin can press it.

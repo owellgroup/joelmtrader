@@ -1,0 +1,76 @@
+# Portainer stack for MetaTrader 5 + Python on 37.27.56.188 (64 GB RAM).
+# Build first by pasting bootstrap.sh into that server's SSH window (Linux.md).
+# Then Portainer -> Stacks -> Add stack -> name: mt5-bridge -> paste this file.
+# Environment variables:
+#   ENGINE_API_KEY   REQUIRED  same value as ENGINE_API_KEY on the backend at 37.27.56.188
+#   MT5_BRIDGE_URL   optional  default ws://37.27.56.188:8088/mt5-bridge
+#   MT5_LOGIN / MT5_PASSWORD / MT5_SERVER   optional broker auto-login
+#   ENABLE_VNC       1 = noVNC on, 0 = off
+#   VNC_PASSWORD     optional
+services:
+  mt5:
+    image: mt5-bridge:latest
+    container_name: mt5-bridge
+    hostname: mt5-bridge
+    restart: always
+
+    environment:
+      MT5_BRIDGE_URL: ${MT5_BRIDGE_URL:-ws://37.27.56.188:8088/mt5-bridge}
+      ENGINE_API_KEY: ${ENGINE_API_KEY:?Set ENGINE_API_KEY to the same value as on the backend stack}
+      MT5_LOGIN: ${MT5_LOGIN:-}
+      MT5_PASSWORD: ${MT5_PASSWORD:-}
+      MT5_SERVER: ${MT5_SERVER:-}
+      ENABLE_VNC: ${ENABLE_VNC:-1}
+      VNC_PASSWORD: ${VNC_PASSWORD:-}
+      TZ: Etc/UTC
+
+    ports:
+      - target: 6080
+        published: 6080
+        protocol: tcp
+        mode: host
+
+    volumes:
+      - mt5-wine:/wine
+
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    shm_size: "256m"
+
+    oom_score_adj: 500
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+    healthcheck:
+      test: ["CMD", "/opt/mt5/svc.sh", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 900s
+
+    stop_grace_period: 45s
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 2G
+      restart_policy:
+        condition: any
+        delay: 10s
+        window: 120s
+
+volumes:
+  mt5-wine:
+    name: mt5-wine

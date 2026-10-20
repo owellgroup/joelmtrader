@@ -16,7 +16,7 @@ import MetaTrader5 as mt5
 import numpy as np
 import websockets
 
-SERVER = os.environ.get("MT5_BRIDGE_URL", "ws://145.241.187.174:8088/mt5-bridge")
+SERVER = os.environ.get("MT5_BRIDGE_URL", "ws://37.27.56.188:8088/mt5-bridge")
 DEFAULT_KEY = "a293bc338ba95dbd8bcfb55aa4ab99a13f51351f712d034c"
 
 
