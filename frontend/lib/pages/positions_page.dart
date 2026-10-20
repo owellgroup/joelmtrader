@@ -91,11 +91,9 @@ class _OpenTabState extends State<_OpenTab> with AutomaticKeepAliveClientMixin {
         const EmptyState(icon: Icons.hourglass_empty_rounded, title: 'No open trades', message: 'When the bot finds a valid setup it will appear here with live profit/loss.')
       else ...[
         AppCard(
-          child: Row(children: [
+          child: Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
             const Icon(Icons.stacked_line_chart_rounded, color: Palette.brand),
-            const SizedBox(width: 10),
             Text('${_items!.length} open', style: const TextStyle(fontWeight: FontWeight.w800)),
-            const Spacer(),
             Text('Floating ${money(total, sign: true)}', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: context.pnl(total))),
           ]),
         ),
@@ -110,13 +108,10 @@ class _OpenTabState extends State<_OpenTab> with AutomaticKeepAliveClientMixin {
     final reasons = (t['reasons'] as List?) ?? [];
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
+        Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
           Text(t['symbol'].toString(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-          const SizedBox(width: 8),
           Tag(t['side'].toString(), buy ? Palette.green : Palette.red),
-          const SizedBox(width: 6),
           Text('${t['lots']} lots', style: TextStyle(color: context.muted, fontSize: 12)),
-          const Spacer(),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: Text(money(t['floatingProfit'], sign: true), key: ValueKey(money(t['floatingProfit'])), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: context.pnl(t['floatingProfit']))),
@@ -235,17 +230,14 @@ class _ClosedTabState extends State<_ClosedTab> with AutomaticKeepAliveClientMix
     final col = result == 'WIN' ? Palette.green : (result == 'LOSS' ? Palette.red : Palette.slate);
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
+        Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
           Tag(result, col),
-          const SizedBox(width: 8),
           Text('${t['symbol']} ${t['side']}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-          const SizedBox(width: 6),
           Text('${t['lots']} lots', style: TextStyle(color: context.muted, fontSize: 12)),
-          const Spacer(),
           Text(money(net, sign: true), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 19, color: context.pnl(net))),
         ]),
         const SizedBox(height: 8),
-        Text('${t['openPrice']}  →  ${t['closePrice']}   ·   held ${fmtDuration(t['openTime'], t['closeTime'])}', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+        Text('${t['openPrice']}  →  ${t['closePrice']}   ·   held ${fmtDuration(t['openTime'], t['closeTime'])}', style: const TextStyle(fontSize: 12.5, height: 1.35, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(Icons.flag_rounded, size: 15, color: col),

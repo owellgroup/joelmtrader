@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../core/utils.dart';
 
 class AppCard extends StatelessWidget {
@@ -29,18 +30,33 @@ class AppCard extends StatelessWidget {
   }
 }
 
-/// JPX Finance wordmark from assets/logo/logo.png.
+/// Launcher mark from assets/images/icon.svg.
+class AppIcon extends StatelessWidget {
+  final double size;
+  const AppIcon({super.key, this.size = 72});
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      'assets/images/icon.svg',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+    );
+  }
+}
+
+/// Brand image from assets/images/logo.svg.
 class BrandLogo extends StatelessWidget {
   final double height;
   const BrandLogo({super.key, this.height = 88});
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/logo/logo.png',
+    return SvgPicture.asset(
+      'assets/images/logo.svg',
       height: height,
       fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
     );
   }
 }
@@ -53,17 +69,37 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heading = SizedBox(
+      width: double.infinity,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, softWrap: true, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, height: 1.25)),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(subtitle!, softWrap: true, style: TextStyle(fontSize: 13, color: context.muted, height: 1.4)),
+          ),
+      ]),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(subtitle!, style: TextStyle(fontSize: 12, color: context.muted))),
-          ]),
-        ),
-        if (trailing != null) trailing!,
-      ]),
+      child: LayoutBuilder(builder: (context, c) {
+        // Keep the sentence on its own full-width line. A row lets the
+        // buttons steal the width and the words stack one under another.
+        final stack = trailing != null && c.maxWidth < 840;
+        if (trailing == null) return heading;
+        if (stack) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            heading,
+            const SizedBox(height: 12),
+            Align(alignment: Alignment.centerLeft, child: trailing!),
+          ]);
+        }
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: heading),
+          const SizedBox(width: 12),
+          Flexible(child: Align(alignment: Alignment.centerRight, child: trailing!)),
+        ]);
+      }),
     );
   }
 }
@@ -188,12 +224,26 @@ class ErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(color: Palette.red.withOpacity(0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: Palette.red.withOpacity(0.3))),
-        child: Row(children: [
-          const Icon(Icons.error_outline, color: Palette.red),
-          const SizedBox(width: 10),
-          Expanded(child: Text(message, style: const TextStyle(fontSize: 13))),
-          if (onRetry != null) TextButton(onPressed: onRetry, child: const Text('Retry')),
-        ]),
+        child: LayoutBuilder(builder: (context, c) {
+          final text = Expanded(child: Text(message, style: const TextStyle(fontSize: 13, height: 1.35)));
+          final retry = onRetry == null ? null : TextButton(onPressed: onRetry, child: const Text('Retry'));
+          if (c.maxWidth < 420) {
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.error_outline, color: Palette.red),
+                const SizedBox(width: 10),
+                text,
+              ]),
+              if (retry != null) Align(alignment: Alignment.centerRight, child: retry),
+            ]);
+          }
+          return Row(children: [
+            const Icon(Icons.error_outline, color: Palette.red),
+            const SizedBox(width: 10),
+            text,
+            if (retry != null) retry,
+          ]);
+        }),
       );
 }
 

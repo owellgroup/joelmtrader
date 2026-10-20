@@ -106,10 +106,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
+            Wrap(spacing: 8, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
               Text(t['type'].toString().replaceAll('_', ' '), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: col)),
-              if (t['symbol'] != null) Padding(padding: const EdgeInsets.only(left: 8), child: Text(t['symbol'].toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
-              const Spacer(),
+              if (t['symbol'] != null) Text(t['symbol'].toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
               Text(fmtDateTime(t['time']), style: TextStyle(fontSize: 11, color: context.muted)),
             ]),
             const SizedBox(height: 3),

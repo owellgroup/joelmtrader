@@ -50,12 +50,35 @@ class _ReportsPageState extends State<ReportsPage> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(padding: const EdgeInsets.all(16), children: [
-        SectionTitle('Session reports', subtitle: 'A summary e-mail is sent whenever you press Stop trade', trailing: Wrap(spacing: 8, children: [
-          OutlinedButton.icon(onPressed: () => _act(() => api.post('/api/reports/daily'), 'Daily digest requested (only sent if trades closed today)'), icon: const Icon(Icons.today_rounded, size: 18), label: const Text('Send daily digest')),
-          OutlinedButton.icon(onPressed: () => _act(() => api.post('/api/settings/test-email'), 'Test e-mail sent'), icon: const Icon(Icons.mail_outline_rounded, size: 18), label: const Text('Test e-mail')),
-        ])),
+        AppCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const SectionTitle('Session reports', subtitle: 'A summary e-mail is sent whenever you press Stop trade'),
+            LayoutBuilder(builder: (context, c) {
+              final narrow = c.maxWidth < 520;
+              final daily = OutlinedButton.icon(
+                onPressed: () => _act(() => api.post('/api/reports/daily'), 'Daily digest requested (only sent if trades closed today)'),
+                icon: const Icon(Icons.today_rounded, size: 18),
+                label: const Text('Send daily digest'),
+              );
+              final test = OutlinedButton.icon(
+                onPressed: () => _act(() => api.post('/api/settings/test-email'), 'Test e-mail sent'),
+                icon: const Icon(Icons.mail_outline_rounded, size: 18),
+                label: const Text('Test e-mail'),
+              );
+              if (narrow) {
+                return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  daily,
+                  const SizedBox(height: 8),
+                  test,
+                ]);
+              }
+              return Wrap(spacing: 8, runSpacing: 8, children: [daily, test]);
+            }),
+          ]),
+        ),
+        const SizedBox(height: 16),
         if (_items!.isEmpty) const EmptyState(icon: Icons.insights_rounded, title: 'No sessions yet', message: 'Press Trade Now on the dashboard to start your first session.'),
-        ResponsiveGrid(minTileWidth: 420, children: [for (final s in _items!) _card(context, Map<String, dynamic>.from(s))]),
+        ResponsiveGrid(minTileWidth: 280, children: [for (final s in _items!) _card(context, Map<String, dynamic>.from(s))]),
       ]),
     );
   }
@@ -67,15 +90,13 @@ class _ReportsPageState extends State<ReportsPage> {
     final running = s['status'] == 'RUNNING';
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
+        Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
           Text('Session #${s['id']}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-          const SizedBox(width: 8),
           Tag(s['status'].toString(), running ? Palette.green : (s['status'] == 'FAILED' ? Palette.red : Palette.slate)),
-          const Spacer(),
           if (!running) Text(money(net, sign: true), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: context.pnl(net))),
         ]),
         const SizedBox(height: 6),
-        Text('${fmtDateTime(s['startedAt'])}  →  ${s['stoppedAt'] == null ? 'now' : fmtDateTime(s['stoppedAt'])}', style: TextStyle(fontSize: 12, color: context.muted)),
+        Text('${fmtDateTime(s['startedAt'])}  →  ${s['stoppedAt'] == null ? 'now' : fmtDateTime(s['stoppedAt'])}', style: TextStyle(fontSize: 12, height: 1.35, color: context.muted)),
         const SizedBox(height: 10),
         Wrap(spacing: 18, runSpacing: 6, children: [
           _kv(context, 'Opening', money(open)),
@@ -86,12 +107,14 @@ class _ReportsPageState extends State<ReportsPage> {
         ]),
         if (s['note'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(s['note'].toString(), style: const TextStyle(fontSize: 11.5, color: Palette.gold))),
         const SizedBox(height: 8),
-        Row(children: [
+        Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
           Icon(s['emailSent'] == true ? Icons.mark_email_read_rounded : Icons.mail_outline_rounded, size: 16, color: s['emailSent'] == true ? Palette.green : context.muted),
-          const SizedBox(width: 6),
-          Text(s['emailSent'] == true ? 'Report e-mailed' : 'Not e-mailed', style: TextStyle(fontSize: 11.5, color: context.muted)),
-          const Spacer(),
-          if (!running) TextButton(onPressed: () => _act(() => api.post('/api/reports/sessions/${s['id']}/resend'), 'Report queued'), child: const Text('Resend e-mail')),
+          Text(s['emailSent'] == true ? 'Report e-mailed' : 'Not e-mailed', style: TextStyle(fontSize: 12.5, color: context.muted)),
+          if (!running)
+            TextButton(
+              onPressed: () => _act(() => api.post('/api/reports/sessions/${s['id']}/resend'), 'Report queued'),
+              child: const Text('Resend e-mail'),
+            ),
         ]),
       ]),
     );

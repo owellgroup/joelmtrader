@@ -275,9 +275,8 @@ class _Hero extends StatelessWidget {
       child: LayoutBuilder(builder: (context, c) {
         final narrow = c.maxWidth < 700;
         final info = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
+          Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
             StatusPill(status, color, pulse: running),
-            const SizedBox(width: 8),
             if (engine['mode'] == 'paper') const Tag('PAPER MODE', Palette.gold),
             if (engine['mode'] == 'mt5' && engine['broker'] is Map && engine['broker']['demo'] == true) const Tag('DEMO ACCOUNT', Palette.blue),
           ]),
@@ -291,13 +290,18 @@ class _Hero extends StatelessWidget {
               child: Text('This session: ${i(stats['opened'])} opened · ${i(stats['closed'])} closed · ${money(stats['pnl'], sign: true)}', style: TextStyle(fontWeight: FontWeight.w700, color: context.pnl(stats['pnl']))),
             ),
         ]);
-        final buttons = Row(mainAxisSize: MainAxisSize.min, children: [
-          _BigButton(label: 'Trade Now', icon: Icons.play_arrow_rounded, color: Palette.green, enabled: !running && !busy, onTap: onStart, busy: busy && !running),
-          const SizedBox(width: 12),
-          _BigButton(label: 'Stop trade', icon: Icons.stop_rounded, color: Palette.red, enabled: running && !busy, onTap: onStop, busy: busy && running),
-        ]);
+        final stretch = c.maxWidth < 420;
+        final trade = _BigButton(label: 'Trade Now', icon: Icons.play_arrow_rounded, color: Palette.green, enabled: !running && !busy, onTap: onStart, busy: busy && !running, expand: stretch);
+        final stop = _BigButton(label: 'Stop trade', icon: Icons.stop_rounded, color: Palette.red, enabled: running && !busy, onTap: onStop, busy: busy && running, expand: stretch);
+        final buttons = c.maxWidth < 420
+            ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                trade,
+                const SizedBox(height: 10),
+                stop,
+              ])
+            : Wrap(spacing: 12, runSpacing: 10, children: [trade, stop]);
         return narrow
-            ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [info, const SizedBox(height: 16), buttons])
+            ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [info, const SizedBox(height: 16), buttons])
             : Row(children: [Expanded(child: info), const SizedBox(width: 20), buttons]);
       }),
     );
@@ -308,9 +312,9 @@ class _BigButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final bool enabled, busy;
+  final bool enabled, busy, expand;
   final VoidCallback onTap;
-  const _BigButton({required this.label, required this.icon, required this.color, required this.enabled, required this.onTap, this.busy = false});
+  const _BigButton({required this.label, required this.icon, required this.color, required this.enabled, required this.onTap, this.busy = false, this.expand = false});
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +334,7 @@ class _BigButton extends StatelessWidget {
             onTap: enabled ? onTap : null,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min, children: [
                 busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : Icon(icon, color: Colors.white, size: 24),
                 const SizedBox(width: 8),
                 Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
@@ -405,12 +409,10 @@ class _RankRow extends StatelessWidget {
           childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           shape: const Border(),
           collapsedShape: const Border(),
-          title: Row(children: [
+          title: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
             Text(r['symbol'].toString(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-            const SizedBox(width: 8),
             Tag(r['side'].toString(), buy ? Palette.green : Palette.red),
-            if (selected) const Padding(padding: EdgeInsets.only(left: 6), child: Tag('SELECTED', Palette.brand)),
-            const Spacer(),
+            if (selected) const Tag('SELECTED', Palette.brand),
             Text(score.toStringAsFixed(0), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: barColor)),
           ]),
           subtitle: Padding(
@@ -583,11 +585,14 @@ class _NewsCard extends StatelessWidget {
         for (final e in events)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Row(children: [
-              Tag(e['impact'].toString().toUpperCase(), e['impact'] == 'High' ? Palette.red : Palette.gold),
-              const SizedBox(width: 8),
-              Expanded(child: Text('${e['currency']} · ${e['title']}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600))),
-              Text(fmtDateTime(e['time']), style: TextStyle(fontSize: 11, color: context.muted)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Tag(e['impact'].toString().toUpperCase(), e['impact'] == 'High' ? Palette.red : Palette.gold),
+                Text('${e['currency']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                Text(fmtDateTime(e['time']), style: TextStyle(fontSize: 11, color: context.muted)),
+              ]),
+              const SizedBox(height: 2),
+              Text(e['title'].toString(), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, height: 1.3)),
             ]),
           ),
         if (events.isNotEmpty && heads.isNotEmpty) const Divider(height: 18),

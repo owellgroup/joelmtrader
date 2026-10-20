@@ -14,8 +14,8 @@ class Api {
   void Function()? onUnauthorized;
   late Dio _dio;
 
-  Api(this.baseUrl, {this.token}) {
-    _dio = Dio(BaseOptions(
+  Api(this.baseUrl, {this.token, Dio? dio}) {
+    _dio = dio ?? Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 8),
       receiveTimeout: const Duration(seconds: 60),
       sendTimeout: const Duration(seconds: 30),

@@ -118,14 +118,17 @@ class _SettingsPageState extends State<SettingsPage> {
       AppCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SectionTitle('Appearance'),
-          SegmentedButton<ThemeMode>(
-            segments: const [
-              ButtonSegment(value: ThemeMode.light, label: Text('White'), icon: Icon(Icons.light_mode_rounded)),
-              ButtonSegment(value: ThemeMode.dark, label: Text('Black'), icon: Icon(Icons.dark_mode_rounded)),
-              ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.brightness_auto_rounded)),
-            ],
-            selected: {app.themeMode},
-            onSelectionChanged: (s) => app.setTheme(s.first),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(value: ThemeMode.light, label: Text('White'), icon: Icon(Icons.light_mode_rounded)),
+                ButtonSegment(value: ThemeMode.dark, label: Text('Black'), icon: Icon(Icons.dark_mode_rounded)),
+                ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.brightness_auto_rounded)),
+              ],
+              selected: {app.themeMode},
+              onSelectionChanged: (s) => app.setTheme(s.first),
+            ),
           ),
         ]),
       ),
@@ -239,19 +242,29 @@ class _SettingsPageState extends State<SettingsPage> {
             }, icon: const Icon(Icons.mail_outline_rounded), label: const Text('Send test e-mail')),
           ]),
           const Divider(height: 30),
-          Row(children: [
-            const Icon(Icons.person_rounded, color: Palette.brand),
-            const SizedBox(width: 10),
-            Expanded(child: Text('${app.user?['username']}  ·  ${app.isSuper ? 'Super admin' : 'Admin'}', style: const TextStyle(fontWeight: FontWeight.w700))),
-            FilledButton.icon(
+          LayoutBuilder(builder: (context, c) {
+            final who = Row(children: [
+              const Icon(Icons.person_rounded, color: Palette.brand),
+              const SizedBox(width: 10),
+              Expanded(child: Text('${app.user?['username']}  ·  ${app.isSuper ? 'Super admin' : 'Admin'}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700))),
+            ]);
+            final logout = FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: Palette.red),
               onPressed: () async {
                 if (await confirmDialog(context, 'Log out?', 'You will need to sign in again on this device.', confirm: 'Log out')) app.logout();
               },
               icon: const Icon(Icons.logout_rounded),
               label: const Text('Log out'),
-            ),
-          ]),
+            );
+            if (c.maxWidth < 480) {
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                who,
+                const SizedBox(height: 12),
+                logout,
+              ]);
+            }
+            return Row(children: [Expanded(child: who), const SizedBox(width: 12), logout]);
+          }),
         ]),
       ),
       const SizedBox(height: 24),

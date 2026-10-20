@@ -104,23 +104,34 @@ class _AdminsPageState extends State<AdminsPage> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: AppCard(
-                      child: Row(children: [
-                        CircleAvatar(backgroundColor: Palette.brand.withOpacity(0.15), child: Icon(a['role'] == 'SUPER_ADMIN' ? Icons.verified_user_rounded : Icons.person_rounded, color: Palette.brand)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(a['username'].toString(), style: const TextStyle(fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 3),
-                            Wrap(spacing: 6, children: [
-                              Tag(a['role'] == 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN', a['role'] == 'SUPER_ADMIN' ? Palette.gold : Palette.blue),
-                              if (a['enabled'] != true) const Tag('DISABLED', Palette.red),
-                              Text('Last login ${fmtDateTime(a['lastLoginAt'])}', style: TextStyle(fontSize: 11, color: context.muted)),
+                      child: LayoutBuilder(builder: (context, c) {
+                        final identity = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          CircleAvatar(backgroundColor: Palette.brand.withOpacity(0.15), child: Icon(a['role'] == 'SUPER_ADMIN' ? Icons.verified_user_rounded : Icons.person_rounded, color: Palette.brand)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(a['username'].toString(), style: const TextStyle(fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 3),
+                              Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                                Tag(a['role'] == 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN', a['role'] == 'SUPER_ADMIN' ? Palette.gold : Palette.blue),
+                                if (a['enabled'] != true) const Tag('DISABLED', Palette.red),
+                                Text('Last login ${fmtDateTime(a['lastLoginAt'])}', style: TextStyle(fontSize: 11, color: context.muted)),
+                              ]),
                             ]),
-                          ]),
-                        ),
-                        IconButton(icon: const Icon(Icons.edit_rounded), onPressed: () => _edit(Map<String, dynamic>.from(a))),
-                        if (a['role'] != 'SUPER_ADMIN') IconButton(icon: const Icon(Icons.delete_outline_rounded, color: Palette.red), onPressed: () => _delete(Map<String, dynamic>.from(a))),
-                      ]),
+                          ),
+                        ]);
+                        final actions = Row(mainAxisSize: MainAxisSize.min, children: [
+                          IconButton(icon: const Icon(Icons.edit_rounded), onPressed: () => _edit(Map<String, dynamic>.from(a))),
+                          if (a['role'] != 'SUPER_ADMIN') IconButton(icon: const Icon(Icons.delete_outline_rounded, color: Palette.red), onPressed: () => _delete(Map<String, dynamic>.from(a))),
+                        ]);
+                        if (c.maxWidth < 460) {
+                          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                            identity,
+                            Align(alignment: Alignment.centerRight, child: actions),
+                          ]);
+                        }
+                        return Row(children: [Expanded(child: identity), actions]);
+                      }),
                     ),
                   ),
               ]),

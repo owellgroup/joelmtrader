@@ -70,14 +70,15 @@ class _NewsPageState extends State<NewsPage> {
                 opacity: d(e['time']) < now ? 0.5 : 1,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(children: [
-                    SizedBox(width: 92, child: Text(fmtDateTime(e['time']), style: TextStyle(fontSize: 11.5, color: context.muted))),
-                    Tag(e['currency'].toString(), Palette.blue),
-                    const SizedBox(width: 6),
-                    Tag(e['impact'] == 'High' ? 'HIGH' : 'MED', e['impact'] == 'High' ? Palette.red : Palette.gold),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(e['title'].toString(), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600))),
-                    if ((e['forecast'] ?? '').toString().isNotEmpty) Text('F ${e['forecast']}', style: TextStyle(fontSize: 11, color: context.muted)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                      Text(fmtDateTime(e['time']), style: TextStyle(fontSize: 11.5, color: context.muted)),
+                      Tag(e['currency'].toString(), Palette.blue),
+                      Tag(e['impact'] == 'High' ? 'HIGH' : 'MED', e['impact'] == 'High' ? Palette.red : Palette.gold),
+                      if ((e['forecast'] ?? '').toString().isNotEmpty) Text('F ${e['forecast']}', style: TextStyle(fontSize: 11, color: context.muted)),
+                    ]),
+                    const SizedBox(height: 4),
+                    Text(e['title'].toString(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, height: 1.3)),
                   ]),
                 ),
               ),
@@ -86,23 +87,27 @@ class _NewsPageState extends State<NewsPage> {
         const SizedBox(height: 16),
         AppCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SectionTitle('Market headlines', trailing: Wrap(spacing: 6, children: [
-              for (final f in ['ALL', 'XAUUSD', 'EURUSD', 'GBPUSD']) ChoiceChip(label: Text(f), selected: _filter == f, onSelected: (_) => setState(() => _filter = f)),
-            ])),
+            const SectionTitle('Market headlines', subtitle: 'Filter by the pair you want to read'),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final f in ['ALL', 'XAUUSD', 'EURUSD', 'GBPUSD'])
+                ChoiceChip(
+                  label: Text(f),
+                  selected: _filter == f,
+                  onSelected: (_) => setState(() => _filter = f),
+                ),
+            ]),
+            const SizedBox(height: 8),
             if (heads.isEmpty) Text('No headlines.', style: TextStyle(color: context.muted)),
             for (final h in heads)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(h['title'].toString(), style: const TextStyle(fontWeight: FontWeight.w600, height: 1.3)),
-                      const SizedBox(height: 3),
-                      Text('${h['source']} · ${fmtDateTime(h['time'])}', style: TextStyle(fontSize: 11, color: context.muted)),
-                    ]),
-                  ),
-                  const SizedBox(width: 8),
-                  for (final s in (h['symbols'] as List)) Padding(padding: const EdgeInsets.only(left: 4), child: Tag(s.toString().substring(0, 3), Palette.brand)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(h['title'].toString(), style: const TextStyle(fontWeight: FontWeight.w600, height: 1.35)),
+                  const SizedBox(height: 4),
+                  Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                    Text('${h['source']} · ${fmtDateTime(h['time'])}', style: TextStyle(fontSize: 11, color: context.muted)),
+                    for (final s in (h['symbols'] as List)) Tag(s.toString().substring(0, 3), Palette.brand),
+                  ]),
                 ]),
               ),
           ]),

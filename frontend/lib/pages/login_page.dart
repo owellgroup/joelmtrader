@@ -81,8 +81,8 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const BrandLogo(height: 118),
-                    const SizedBox(height: 4),
+                    const BrandLogo(height: 72),
+                    const SizedBox(height: 18),
                     Text('Sign in to the trading desk', style: TextStyle(color: context.muted, fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 26),
                     TextField(

@@ -20,7 +20,7 @@ class WayaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
     return MaterialApp(
-      title: 'JPX Finance',
+      title: 'JoelMTrader',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),

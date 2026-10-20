@@ -96,8 +96,8 @@ class _ShellState extends State<Shell> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const BrandLogo(height: 64),
-              const SizedBox(height: 2),
+              const BrandLogo(height: 48),
+              const SizedBox(height: 8),
               Text('TRADING DESK', style: TextStyle(fontSize: 11, color: Palette.brand, fontWeight: FontWeight.w800, letterSpacing: 1.6)),
             ]),
           ),
@@ -156,12 +156,13 @@ class _ShellState extends State<Shell> {
         appBar: AppBar(
           automaticallyImplyLeading: false,
           leading: wide ? null : IconButton(icon: const Icon(Icons.menu_rounded), onPressed: () => _scaffold.currentState?.openDrawer()),
-          title: Text(_items[_index].label, style: const TextStyle(fontWeight: FontWeight.w800)),
+          title: Text(_items[_index].label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
           actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: Center(child: StatusPill(!_engineOnline ? 'ENGINE OFFLINE' : _status, _statusColor(), pulse: _status != 'STOPPED' && _engineOnline)),
-            ),
+            if (wide)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Center(child: StatusPill(!_engineOnline ? 'ENGINE OFFLINE' : _status, _statusColor(), pulse: _status != 'STOPPED' && _engineOnline)),
+              ),
             IconButton(
               tooltip: 'Toggle theme',
               icon: AnimatedSwitcher(duration: const Duration(milliseconds: 300), child: Icon(context.isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, key: ValueKey(context.isDark))),
@@ -175,6 +176,16 @@ class _ShellState extends State<Shell> {
           if (wide) VerticalDivider(width: 1, color: context.borderColor),
           Expanded(
             child: Column(children: [
+              if (!wide)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: context.isDark ? const Color(0xFF12182B) : const Color(0xFFE7EBFF),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: StatusPill(!_engineOnline ? 'ENGINE OFFLINE' : _status, _statusColor(), pulse: _status != 'STOPPED' && _engineOnline),
+                  ),
+                ),
               if (s.offlineWarning) Container(width: double.infinity, color: Palette.gold.withOpacity(0.2), padding: const EdgeInsets.all(8), child: const Text('Server unreachable - showing cached login. Check your connection.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12))),
               Expanded(
                 child: AnimatedSwitcher(

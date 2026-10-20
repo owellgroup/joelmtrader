@@ -1,5 +1,5 @@
 name: waya_fx_bot
-description: WayaSpot FX Bot - control panel for the automated XAUUSD / EURUSD / GBPUSD trader.
+description: JoelMTrader - control panel for the automated XAUUSD / EURUSD / GBPUSD trader.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -13,6 +13,7 @@ dependencies:
   dio: ^5.7.0
   shared_preferences: ^2.3.3
   intl: ^0.19.0
+  flutter_svg: ^2.2.0
 
 dev_dependencies:
   flutter_test:
@@ -22,5 +23,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/
-    - assets/logo/
+    - assets/images/icon.svg
+    - assets/images/logo.svg

@@ -159,11 +159,9 @@ class _ChartsPageState extends State<ChartsPage> {
           if (r == null)
             Text('No scan data yet.', style: TextStyle(color: context.muted))
           else ...[
-            Row(children: [
+            Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
               Tag(r['side'].toString(), r['side'] == 'BUY' ? Palette.green : Palette.red),
-              const SizedBox(width: 8),
               Text('Score ${d(r['score']).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-              const Spacer(),
               Tag(r['tradable'] == true ? 'READY' : 'WAITING', r['tradable'] == true ? Palette.green : Palette.gold),
             ]),
             const SizedBox(height: 10),
